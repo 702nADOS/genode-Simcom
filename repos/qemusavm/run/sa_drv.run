@@ -1,0 +1,75 @@
+#
+# Build
+#
+
+build {
+	core init
+	qemusavm/sim
+        qemusavm/ecu
+	drivers/timer
+        drivers/nic
+
+}
+
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+install_config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="RAM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="CAP"/>
+		<service name="RM"/>
+		<service name="LOG"/>
+		<service name="SIGNAL" />
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<start name="timer">
+		<resource name="RAM" quantum="10M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+	<start name="nic_drv">
+		<resource name="RAM" quantum="64M"/>
+		<provides>
+			<service name="Nic"/>
+		</provides>
+	</start>
+        <start name="qemusavm_ecu">
+                <binary name="qemusavm_ecu"/>
+                <resource name="RAM" quantum="100M"/>
+                <provides><service name="Qemusavm"/></provides>
+        </start>
+	<start name="qemusavm_sim">
+		<binary name="qemusavm_sim"/>
+		<resource name="RAM" quantum="100M"/>
+		<provides><service name="sockcon"/></provides>
+	</start>
+</config>}
+
+#
+# Boot image
+#
+
+build_boot_image {
+	core init qemusavm_sim qemusavm_ecu 
+	ld.lib.so
+	stdcxx.lib.so
+	libc.lib.so
+	libm.lib.so
+	timer
+	lwip.lib.so
+        nic_drv
+}
+
+append qemu_args " -nographic -m 1024 -net nic,model=lan9118,macaddr=22:22:22:21:21:21 -net vde,sock=/tmp/switch1 "
+
+run_genode_until forever

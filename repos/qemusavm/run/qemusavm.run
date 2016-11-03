@@ -1,0 +1,101 @@
+#
+# Build
+#
+
+build {
+	core init ecu qemusavm
+	drivers/timer
+	drivers/usb
+	drivers/gpio
+	server/usb_terminal
+}
+
+create_boot_directory
+
+#
+# Generate config
+#
+
+install_config {
+<config>
+	<parent-provides>
+		<service name="ROM"/>
+		<service name="RAM"/>
+		<service name="IRQ"/>
+		<service name="IO_MEM"/>
+		<service name="IO_PORT"/>
+		<service name="CAP"/>
+		<service name="PD"/>
+		<service name="RM"/>
+		<service name="CPU"/>
+		<service name="LOG"/>
+		<service name="SIGNAL" />
+	</parent-provides>
+	<default-route>
+		<any-service> <parent/> <any-child/> </any-service>
+	</default-route>
+	<start name="gpio_drv">
+		<resource name="RAM" quantum="4M"/>
+		<provides><service name="Gpio"/></provides>
+	</start>
+	<start name="timer">
+		<resource name="RAM" quantum="2M"/>
+		<provides><service name="Timer"/></provides>
+	</start>
+	<start name="usb_drv">
+		<resource name="RAM" quantum="100M"/>
+		<provides>
+			<service name="Usb"/>
+			<service name="Nic"/>
+		</provides>
+		<config uhci="yes" ehci="yes" xhci="yes">
+			<nic mac="02:00:00:00:01:01" />
+			<raw/>
+		</config>
+	</start>
+	<start name="usb_terminal">
+		<resource name="RAM" quantum="20M"/>
+		<provides><service name="Terminal"/></provides>
+	</start>
+	<start name="qemusavm_ecu">
+		<binary name="qemusavm_ecu"/>
+		<resource name="RAM" quantum="200M"/>
+		<provides><service name="qemusavm"/></provides>
+	</start>
+	<start name="qemusavm_sim">
+		<binary name="qemusavm_sim"/>
+		<resource name="RAM" quantum="200M"/>
+	</start>
+</config>}
+
+#	<start name="usb_drv">
+#		<resource name="RAM" quantum="12M"/>
+#		<provides>
+#			<service name="Usb"/>
+#			<service name="Nic"/>
+#		</provides>
+#		<config uhci="yes" ehci="yes" xhci="yes">
+#			<nic mac="02:00:00:00:01:01" />
+#		</config>
+#	</start>
+
+#
+# Boot image
+#
+
+build_boot_image {
+	core init qemusavm_sim qemusavm_ecu
+	ld.lib.so
+	stdcxx.lib.so
+	libc.lib.so
+	libm.lib.so
+	timer
+	gpio_drv
+	usb_drv
+	usb_terminal
+	lwip.lib.so
+}
+
+append qemu_args " -nographic -m 1024 "
+
+run_genode_until forever
