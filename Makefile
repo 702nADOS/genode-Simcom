@@ -11,7 +11,7 @@ BUILD_CONF           = $(GENODE_BUILD_DIR)/etc/build.conf
 
 .PHONY: all toolchain ports genode genode_build_dir clean
 
-all: toolchain ports genode_build_dir genode
+all: toolchain ports genode_build_dir genode-simcom genode-qemusavm
 
 toolchain:
 	mkdir -p $(TOOLCHAIN_BUILD_DIR)
@@ -34,9 +34,13 @@ genode_build_dir:
 	printf 'REPOSITORIES += $$(GENODE_DIR)/repos/libports\n' >> $(BUILD_CONF)
 	printf 'REPOSITORIES += $$(GENODE_DIR)/repos/dde_linux\n' >> $(BUILD_CONF)
 	printf 'REPOSITORIES += $$(GENODE_DIR)/repos/ecu\n' >> $(BUILD_CONF)
+	printf 'REPOSITORIES += $$(GENODE_DIR)/repos/simcom\n' >> $(BUILD_CONF)
 	printf 'REPOSITORIES += $$(GENODE_DIR)/repos/qemusavm\n' >> $(BUILD_CONF)
 
-genode:
+genode-simcom:
+	$(MAKE) -j10 -C $(GENODE_BUILD_DIR) run/simcom
+
+genode-qemusavm:
 	$(MAKE) -j10 -C $(GENODE_BUILD_DIR) run/qemusavm
 
 clean:
